@@ -1,0 +1,8 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: local-retain
+provisioner: rancher.io/local-path  #tipo de provisioner (ebs,gcp,NFS,local,etc)
+reclaimPolicy: Retain  # Delete
+volumeBindingMode: WaitForFirstConsumer  ## Immediate
+#allowVolumeExpansion: true 
