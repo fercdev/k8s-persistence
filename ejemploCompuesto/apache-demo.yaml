@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-apache
+spec:
+  capacity:
+    storage: 3Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  hostPath:
+    path: /mnt/data/httpd
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-apache
+spec: 
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: pv-apache
+  storageClassName: ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dp-apache-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: apache-demo
+  template:
+    metadata:
+      labels:
+        app: apache-demo
+    spec:
+      containers:
+      - name: apache-container
+        image: httpd:alpine
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - name: web-data
+            mountPath: /usr/local/apache2/htdocs
+      volumes:
+        - name: web-data
+          persistentVolumeClaim:
+            claimName: pvc-apache
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-apache
+spec:
+  selector:
+    app: apache-demo
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30087
+  type: NodePort

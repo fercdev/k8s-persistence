@@ -1,0 +1,66 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-d2-nginx
+spec:
+  capacity:
+    storage: 2Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  hostPath:
+    path: /mnt/data/nginx-d2-demo
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-d2-nginx
+spec: 
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: pv-d2-nginx
+  storageClassName: ""
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dp-d2-nginx
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx-d2-demo
+  template:
+    metadata:
+      labels:
+        app: nginx-d2-demo
+    spec:
+      containers:
+      - name: nginx-d2-container
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+        volumeMounts:
+          - name: nginx-storage
+            mountPath: /usr/share/nginx/html
+      volumes:
+        - name: nginx-storage
+          persistentVolumeClaim:
+            claimName: pvc-d2-nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-d2-nginx
+spec:
+  selector:
+    app: nginx-d2-demo
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30086
+  type: NodePort
